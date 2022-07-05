@@ -107,6 +107,13 @@ landscape_variable$period1$state[10,12] = "I"
     # With the idea that landscape[[1]] reflects the state of the automata
     # Update conditions from variable characteristics from part I (landscape profile)
 
+      # Compute terrain distance for all adjacent cells
+    # Something like
+    # dist = sqrt(dist^2 + dist^2 + 
+    # + (landscape_fixed$altitude[ignited$coord_time[1,i],ignited$coord_time[2,i]]
+    #    - landscape_fixed$altitude[ignited$coord_time][1,i]-/+1, ignited$coord_time[2,i]-/+1))
+    # Actually, fix +/-1 with each direction in the data;
+      
 
 # B. For each cell that is ignited : get R_theta and distance ####
   
@@ -127,9 +134,20 @@ landscape_variable$period1$state[10,12] = "I"
     d_n = Rtheta*t_n
   # and update ignited[[3]] (accumulated distances)
     # --> REMARK  : This is where the storage is critical
+    
     # Two different issues here : 
     # - The accumulated distance of fire is not really important for the ignited cell. It matters for the
-    # POTENTIAL cells to be ignited : it makes no real sense to store it here. 
+    # POTENTIAL cells to be ignited : it makes no real sense to store it in ignited cells data.
+    # - Need to store the accumulated distance traveled TO a cell
+    # -> This raises the issue of double ignition : assume we have two initial ignition points, both traveling
+    # to a cell. Should both values be stored? Can we just keep the largest spread in each period? 
+    # IN THE CASE OF a HOMOGENEOUS landscape, yes : the differential is set up at the origin. However, with HETEROGENEOUS
+    # landscapes (or wind changes for ex), the delay can be made up with especially fire prone conditions in period 2.
+    
+    # Abstract from this issue here : just use a single ignition point, and store the data in the relevant data
+    # sets for non-ignited cells.
+    
+    # Question here : how to assign the distances?
     
     
 # C. Transition of fire #####
