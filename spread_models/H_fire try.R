@@ -47,23 +47,46 @@ delta_t = cell_size / max(apply(R_theta))
 
 #########################################################################################################################################
 # I. SET LANDSCAPE CHARACTERISTICS #####
-# A. Import relevant data and store it ####
+# A. Import relevant data and store it #### 
 #   -> Carefully design storage for VARIABLE/INVARIANT information : fuel, wind, temperature / slope, altitude
-
+landscape_variable = list(period1 = list(
+                                        fuel       = as.data.frame(matrix(nrow=side+1, ncol=side+1,10)),
+                                        wind_speed = as.data.frame(matrix(nrow=side+1, ncol=side+1,15))))
+landscape_fixed    = list(altitude = matrix(nrow=side+1, ncol=side+1, 100),
+                          slope    = matrix(nrow=side+1, ncol=side+1, 0))
 #   Considering V variable info and T period, does this mean I have to have VxT rasters?
 # B. Initiate automata states
 #   -> Can depend on some features, if data is absent for example, can be that it is unburnable
-#   -> 
+#   
+landscape_variable$period1$state = as.data.frame(matrix(nrow=side+1, ncol=side+1, 'NI'))
+landscape_variable$period1$state[10,12] = "I"
 
 # C. PROVISIONAL : Partition landscape into different states for easier study
 # Set the list of ignited cells
-    # ignited      <- list()
-    # ignited[[1]] <- data.frame(x=0,y=0,t_ignition, t_extinction) # Coordinates of ignited cells and time of ignition and extinction
-    # ignited[[2]] <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) #Terrain distance to adjacent cells
-    # ignited[[3]] <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) # Cumulative distance to adjacent cells
+    ignited      <- list()
+    ignited$coord_time   <- data.frame(x=if(length(which(landscape_variable$period1$state=="I"))==0) 0 else which(landscape_variable$period1$state=="I")%%(side+1),
+                                       y=if(length(which(landscape_variable$period1$state=="I"))==0) 0 else which(landscape_variable$period1$state=="I")%/%(side+1)+1,
+                                       t_ignition=0, 
+                                       t_extinction=0) # Coordinates of ignited cells and time of ignition and extinction
+    ignited$terrain_dist <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) #Terrain distance to adjacent cells
+    ignited$cumul_dist   <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) # Cumulative distance to adjacent cells
 # Repeat with CONSUMED and NOT-IGNITED
+    consumed      <- list()
+    consumed$coord_time   <- data.frame(x= if(length(which(landscape_variable$period1$state=="C"))==0) 0 else which(landscape_variable$period1$state=="C")%%(side+1),
+                                        y= if(length(which(landscape_variable$period1$state=="C"))==0) 0 else which(landscape_variable$period1$state=="C")%/%(side+1)+1,
+                                        t_ignition=0, 
+                                        t_extinction=0) # Coordinates of ignited cells and time of ignition and extinction
+    consumed$terrain_dist <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) #Terrain distance to adjacent cells
+    consumed$cumul_dist   <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) # Cumulative distance to adjacent cells
 
-# REMARKS : 
+    notignited      <- list()
+    notignited$coord_time   <- data.frame(x=if(length(which(landscape_variable$period1$state=="NI"))==0) 0 else which(landscape_variable$period1$state=="NI")%%(side+1),
+                                          y=if(length(which(landscape_variable$period1$state=="NI"))==0) 0 else which(landscape_variable$period1$state=="NI")%/%(side+1)+1,
+                                          t_ignition=0, 
+                                          t_extinction=0) # Coordinates of ignited cells and time of ignition and extinction
+    notignited$terrain_dist <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) #Terrain distance to adjacent cells
+    notignited$cumul_dist   <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) # Cumulative distance to adjacent cells
+    # REMARKS : 
 #  -> 1. How do we keep track of time here, and how do we update overall landscape?
 #  -> Response : keep time with coordinates
 
@@ -79,25 +102,36 @@ delta_t = cell_size / max(apply(R_theta))
   #    while updating actual time with adaptive time step?
 
 # A. Get ignited cells and characteristics ####
-    
+
     # Idea/example: select(landscape[[1]]==1)
     # With the idea that landscape[[1]] reflects the state of the automata
-    # Update conditions frop variable characteristics from part I (landscape profile)
+    # Update conditions from variable characteristics from part I (landscape profile)
 
 
 # B. For each cell that is ignited : get R_theta and distance ####
   
   # Compute the R_theta for adjacent cells
-    # Take the vector of angles
-    # Get the R_max for the cell and STORE IT : storage is the issue here. 
+    # Take the vector of angles from the direction of initial Rmax 
+    # HYP : So far assume wind is blowing NORTH
+    angles= c(360,45,90,135,180,225,270,315)*pi/180
+    # Get the R_max for the cell and STORE IT : storage is the issue here.
+      # Compute the Rmax with Rothermel formula, depending on one cell data
+      # Measured in m/s
+      # ATTENTION : I don't get how to compute it for now though
+    Rmax = 10
     # Get the vector of R_theta
-
+    Rtheta = (1-eccentr(10))/(1-eccentr(10)*cos(angles))*Rmax  
   # Compute t_n = cell_size/max R_max
-
-  # Compute the distance in all directions (R_theta x t_n) 
+    t_n = cell_size/max(Rmax)
+  # Compute the distance in all directions (R_theta x t_n)
+    d_n = Rtheta*t_n
   # and update ignited[[3]] (accumulated distances)
     # --> REMARK  : This is where the storage is critical
-
+    # Two different issues here : 
+    # - The accumulated distance of fire is not really important for the ignited cell. It matters for the
+    # POTENTIAL cells to be ignited : it makes no real sense to store it here. 
+    
+    
 # C. Transition of fire #####
   # Transition should start with a screening of states
   # and focus only on cells susceptible to change their states. 
