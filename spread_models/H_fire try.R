@@ -60,6 +60,22 @@ landscape_fixed    = list(altitude = matrix(nrow=side+1, ncol=side+1, 100),
 #   
 landscape_variable$period1$state = as.data.frame(matrix(nrow=side+1, ncol=side+1, 'NI'))
 landscape_variable$period1$state[10,12] = "I"
+landscape_variable$period1$state[10,13] = "I"
+landscape_variable$period1$state[10,14] = "I"
+landscape_variable$period1$state[11,12] = "I"
+landscape_variable$period1$state[11,13] = "I"
+landscape_variable$period1$state[11,14] = "I"
+landscape_variable$period1$state[12,12] = "I"
+landscape_variable$period1$state[12,13] = "I"
+landscape_variable$period1$state[12,14] = "I"
+
+
+
+
+
+
+
+
 
 # C. PROVISIONAL : Partition landscape into different states for easier study
 # Set the list of ignited cells
@@ -86,6 +102,8 @@ landscape_variable$period1$state[10,12] = "I"
                                           t_extinction=0) # Coordinates of ignited cells and time of ignition and extinction
     notignited$terrain_dist <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) #Terrain distance to adjacent cells
     notignited$cumul_dist   <- data.frame(top=0, top_right=0, right=0, bottom_right=0, bottom=0, bottom_left=0, left=0, top_left=0) # Cumulative distance to adjacent cells
+    
+    
     # REMARKS : 
 #  -> 1. How do we keep track of time here, and how do we update overall landscape?
 #  -> Response : keep time with coordinates
@@ -108,6 +126,42 @@ landscape_variable$period1$state[10,12] = "I"
     # Update conditions from variable characteristics from part I (landscape profile)
 
       # Compute terrain distance for all adjacent cells
+    for(i in 1:nrow(ignited$coord_time)){
+      # TOP
+      ignited$terrain_dist[i,1] = sqrt(cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1]-1 , ignited$coord_time[i,2]])^2)
+      # TOP-RIGHT
+      ignited$terrain_dist[i,2] = sqrt(cell_size^2 + cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1]-1 , ignited$coord_time[i,2]+1])^2)
+      # RIGHT
+      ignited$terrain_dist[i,3] = sqrt(cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]+1])^2)
+      # BOTTOM RIGHT
+      ignited$terrain_dist[i,4] = sqrt(cell_size^2 + cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1]+1 , ignited$coord_time[i,2]+1])^2)
+      # BOTTOM
+      ignited$terrain_dist[i,5] = sqrt(cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1]+1 , ignited$coord_time[i,2]])^2)
+      # BOTTOM LEFT
+      ignited$terrain_dist[i,6] = sqrt(cell_size^2 + cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1]+1 , ignited$coord_time[i,2]-1])^2)
+      # LEFT
+      ignited$terrain_dist[i,7] = sqrt(cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]-1])^2)
+      # TOP LEFT
+      ignited$terrain_dist[i,8] = sqrt(cell_size^2 + cell_size^2 + 
+                                         (landscape_fixed$altitude[ignited$coord_time[i,1] , ignited$coord_time[i,2]]
+                                          - landscape_fixed$altitude[ignited$coord_time[i,1]-1 , ignited$coord_time[i,2]-1])^2)
+      
+    }
+    
     # Something like
     # dist = sqrt(dist^2 + dist^2 + 
     # + (landscape_fixed$altitude[ignited$coord_time[1,i],ignited$coord_time[2,i]]
@@ -116,23 +170,27 @@ landscape_variable$period1$state[10,12] = "I"
       
 
 # B. For each cell that is ignited : get R_theta and distance ####
-  
-  # Compute the R_theta for adjacent cells
+  for(i in 1:nrow(ignited$coord_time)){
+    # Compute the R_theta for adjacent cells
     # Take the vector of angles from the direction of initial Rmax 
-    # HYP : So far assume wind is blowing NORTH
+    # HYP : So far assume wind is blowing NORTH : this is complicated
+    
     angles= c(360,45,90,135,180,225,270,315)*pi/180
     # Get the R_max for the cell and STORE IT : storage is the issue here.
-      # Compute the Rmax with Rothermel formula, depending on one cell data
-      # Measured in m/s
-      # ATTENTION : I don't get how to compute it for now though
+    # Compute the Rmax with Rothermel formula, depending on one cell data
+    # Measured in m/s
+    # ATTENTION : I don't get how to compute it for now though
     Rmax = 10
     # Get the vector of R_theta
     Rtheta = (1-eccentr(10))/(1-eccentr(10)*cos(angles))*Rmax  
-  # Compute t_n = cell_size/max R_max
+    # Compute t_n = cell_size/max R_max
     t_n = cell_size/max(Rmax)
-  # Compute the distance in all directions (R_theta x t_n)
+    # Min amount of time that can occur in the simulation before the fire may have traveled to an other cell in a single
+    # time step.
+    
+    # Compute the distance in all directions (R_theta x t_n)
     d_n = Rtheta*t_n
-  # and update ignited[[3]] (accumulated distances)
+    # and update ignited[[3]] (accumulated distances)
     # --> REMARK  : This is where the storage is critical
     
     # Two different issues here : 
@@ -148,7 +206,10 @@ landscape_variable$period1$state[10,12] = "I"
     # sets for non-ignited cells.
     
     # Question here : how to assign the distances?
-    
+    # -> Assume that wind blows NORTH : angle for top=0/360
+    ignited$cumul_dist[i,] = d_n
+  }
+
     
 # C. Transition of fire #####
   # Transition should start with a screening of states
@@ -160,9 +221,28 @@ landscape_variable$period1$state[10,12] = "I"
 
   # For all directions, compare same lines across ignited[[2]] and ignited[[3]]:
     # if accumulated distance (ignited[[3]]) is larger than terrain distance (ignited[[2]])
-    # and cells are not unburnable, or consumed
+    # and cells are not unburnable, or consumed, or already ignited
     # => then set cell to ignited
 
+    comp = as.data.frame(which(ignited$terrain_dist<=ignited$cumul_dist, arr.ind = T))
+    
+    # This gives us information :
+    #   - for row i in comp gives x_i and y_i, the coordinates of ignited cells
+    #   - col gives which cell should be ignited. So if col=1, it means that cell with coordinate x-1 and y should ignite
+    #     if col=6, cell to be ignited is x+1 and y-1
+    
+    for(i in 1:nrow(comp)){
+      if(landscape_variable$period1$state[comp[i,1],comp[i,2]]=="NI"){
+        ignited$coord_time = rbind(ignited$coord_time, c(comp[i,1],comp[i,2],0,NA))
+      }
+    }
+    
+    
+    
+    
+    
+    
+    
     # Question : should the landscape[[1]] track that, overall? 
     # Even if yes, do we need an other dataset to work with? 
 
@@ -171,8 +251,17 @@ landscape_variable$period1$state[10,12] = "I"
           # Distance accumulated
           # Terrain distance
           # Time of ignition and extinction
-
+    # HYP : may need to update partially landscape here. Set next step landscape and make it evolve
+    # to account for ignitions. It is easier to understand whether all 8 adjacent cells are ignited here 
+    # rather than accounting for it with the coordinates in the ignited list. 
+    
   # ii. if all adjacent cells are ignited, set to consumed #####
+for(i in nrow(ignited$coord_time)){
+coord = ignited$coord_time %>% select(x,y)
+
+  (coord[i,1]-1 %in% coord$x & coord[i,2]-1 %in% coord$y) & (coord[i,1]-1 %in% coord$x & coord)
+  }
+    
       # Check if all adjacent cells are ignited
       # if yes
         # append a new cell to the burnt list with its coordinates
@@ -187,7 +276,9 @@ landscape_variable$period1$state[10,12] = "I"
     # Update cumulative distance that the fire has traveled across all directions
 
 # D. Update the landscape #####
-
+  # Need to set new period and environmental data
+  # For example, update fuel after burn and set its own law of motion  
+    
   # The issue here is to collect the data on all the lists of states
   # to have a visualization of the landscape across time.
   # REMARK 1 : Need to be able to store raster data with time to plot it with time
