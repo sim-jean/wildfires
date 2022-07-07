@@ -59,8 +59,8 @@ landscape_fixed    = list(altitude = matrix(nrow=side+1, ncol=side+1, 100),
 #   -> Can depend on some features, if data is absent for example, can be that it is unburnable
 #   
 landscape_variable$period1$state = as.data.frame(matrix(nrow=side+1, ncol=side+1, 'NI'))
-landscape_variable$period1$state[10,12] = "I"
-landscape_variable$period1$state[10,13] = "I"
+landscape_variable$period0$state[10,12] = "I"
+landscape_variable$period0$state[10,13] = "I"
 landscape_variable$period1$state[10,14] = "I"
 landscape_variable$period1$state[11,12] = "I"
 landscape_variable$period1$state[11,13] = "I"
@@ -118,7 +118,7 @@ landscape_variable$period1$state[12,14] = "I"
   # -> REMARK : how do we keep track of the adaptive time step? 
   # -> Do I want to have a mute variable t that covers the simulation periods
   #    while updating actual time with adaptive time step?
-
+  # YES
 # A. Get ignited cells and characteristics ####
 
     # Idea/example: select(landscape[[1]]==1)
