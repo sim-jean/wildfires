@@ -43,3 +43,11 @@ terrain_dist = function(i, location, coord_x=1, coord_y=2, cell_size=10){
   return(dist)
 }
 
+
+
+
+
+
+
+
+
