@@ -18,17 +18,21 @@ side = 20
 cell_size = 10
 
 
-#landscape_variable    = list()
-#for(i in 1:1000){
-#  landscape_variable[i] = list(paste0("period",i))
-#}
-# NEED TO FIND A WAY TO STORE THAT IN A LIST OF LIST
-# Like ideally period0 is a list, period1 is a list etc
+# What needs to be done is to set the landscape over the whole time period, and to update certain elements
+# as the code runs : state, fuel.
+
+for(k in 1:100){
+  assign(paste0("period",k),          list(state      = as.data.frame(matrix(nrow=side+1, ncol=side+1, 'NI')), # initiate states
+                                          fuel       = as.data.frame(matrix(nrow=side+1, ncol=side+1,  10)), # Fuel index of 10 : BAD
+                                          wind_speed = as.data.frame(matrix(nrow=side+1, ncol=side+1, 15)), #Wind speed in m.s^-1
+                                          wind_dir   = as.data.frame(matrix(nrow=side+1, ncol=side+1, 0))))  #angle, 0=N, 180=S
+
+  }
 
 landscape_variable = list(period0 = list(state      = as.data.frame(matrix(nrow=side+1, ncol=side+1, 'NI')), # initiate states
                                          fuel       = as.data.frame(matrix(nrow=side+1, ncol=side+1,  10)), # Fuel index of 10 : BAD
                                          wind_speed = as.data.frame(matrix(nrow=side+1, ncol=side+1, 15)), #Wind speed in m.s^-1
-                                         wind_dir   = as.data.frame(matrix(nrow=side+1, ncol=side+1, 0)))) #angle, 0=N, 180=S
+                                         wind_dir   = as.data.frame(matrix(nrow=side+1, ncol=side+1, 0))))
 
 
 landscape_fixed    = list( altitude = as.data.frame(matrix(nrow=side+1, ncol=side+1, 100)),
@@ -36,8 +40,8 @@ landscape_fixed    = list( altitude = as.data.frame(matrix(nrow=side+1, ncol=sid
 
 
 ####  B. Initiate ignition points
-landscape_variable$period0$state[10,12] = "I"
-landscape_variable$period0$state[10,13] = "I"
+period1$state[10,12] = "I"
+period1$state[10,13] = "I"
 
 #### C. Partition landscape into different states for easier study ####
 # Set vectors and data for states and directions
@@ -52,8 +56,8 @@ states = c("ignited","unburnable","notignited","consumed")
 states2= c('I', "U", "NI", "C")
 # Set the list of ignited cells
 for(i in 1:4){
-  stuf = list(coord_time   = data.frame(x=if(length(which(landscape_variable$period0$state==states2[i]))==0) 0 else which(landscape_variable$period0$state==states2[i])%%(side+1),
-                                        y=if(length(which(landscape_variable$period0$state==states2[i]))==0) 0 else which(landscape_variable$period0$state==states2[i])%/%(side+1)+1,
+  stuf = list(coord_time   = data.frame(x=if(length(which(period1$state==states2[i]))==0) 0 else which(landscape_variable$period0$state==states2[i])%%(side+1),
+                                        y=if(length(which(period1$state==states2[i]))==0) 0 else which(landscape_variable$period0$state==states2[i])%/%(side+1)+1,
                                         t_ignition   = NA, 
                                         t_extinction = NA), # Coordinates of ignited cells and time of ignition and extinction)
               terrain_dist =  data.frame(top = 0, top_right = 0, right = 0, bottom_right = 0, bottom = 0,
@@ -100,7 +104,7 @@ for(i in 1:nrow(ignited$coord_time)){
 # - Substract angle of current wind to wind used for Rmax and operate
 # HYP : May need to standardize wind data in bins
 angles                 = (c(0,45,90,135,180,225,270,315)
-                          -landscape_variable$period0$wind_dir[ignited$coord_time[i,1],ignited$coord_time[i,2]])*pi/180
+                          -period1$wind_dir[ignited$coord_time[i,1],ignited$coord_time[i,2]])*pi/180
 
 Rtheta                 = (1-eccentr(10))/(1-eccentr(10)*cos(angles))*Rmax  
 # Compute t_n = cell_size/max R_max
@@ -137,11 +141,11 @@ ignited$coord_time   = rbind(ignited$coord_time, new_ignit)
 
 # Update the landscape
 
-update                                            = landscape_variable$period0$state
+update                                            = period1$state
 for(i in 1:nrow(ignited$coord_time)){
   update[as.numeric(ignited$coord_time[i,1]), as.numeric(ignited$coord_time[i,2])] = "I"
 }
-
+period1$state = update
 # Need to find way to append the list of lists : I want to include a second list in the list
 
 ##### ii. Switch from ignited to consumed ####
@@ -150,3 +154,26 @@ for(i in 1:nrow(ignited$coord_time)){
 # Need to evaluate the condition if(all adjacent cells are on fire)
 # Take into account the length of the condition, then evaluate it to avoid corners
 # And if its ok, then switch landscape value to I. 
+
+# One function for rows and one for columns? 
+# Or two loops?
+current_state      =  period1$state
+for(i in 2:(nrow(current_state)-1)){
+  for(j in 2:(ncol(current_state)-1)){
+    condition1 =  (period1$state[i-1,j] =="I" & period1$state[i-1,j-1] =="I" & period1$state[i-1,j+1] =="I"&
+                     period1$state[i,j-1] =="I" & period1$state[i, j+1]  =="I" & period1$state[i+1,j-1] =="I"&
+                     period1$state[i+1,j] =="I" & period1$state[i+1,j+1] =="I")
+    condition2 =  (period1$state[i,j]   %in% c("NI","I"))
+    if(length((condition1 & condition2 )>0)){
+      period1$state[i,j] = "B"
+    }
+  }
+}
+
+
+##### iii. Include fuel dynamics #####
+# Once a cell has been burnt, it can no longer burn
+# However, as time goes on, a module of vegetation can be implemented
+# to simulate vegetation growth and take into account different fuels
+
+# Would need some fire intensity etc. For now, no vegetation model.
