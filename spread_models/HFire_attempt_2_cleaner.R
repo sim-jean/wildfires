@@ -77,6 +77,7 @@ rm(stuf,i)
 steps = 100 # Specify number of steps
 # for(s in 1:steps){}
 
+
 #### B. Scan ignited cells and compute ex-ante characteristics
 
 for(i in 1:nrow(ignited$coord_time)){
