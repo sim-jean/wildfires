@@ -227,7 +227,7 @@ landscape_variable$period1$state[12,14] = "I"
     comp = as.data.frame(which(ignited$terrain_dist<=ignited$cumul_dist, arr.ind = T))
     
     # This gives us information :
-    #   - for row i in comp gives x_i and y_i, the coordinates of ignited cells
+    #   -  row i in comp gives x_i and y_i, the coordinates of ignited cells
     #   - col gives which cell should be ignited. So if col=1, it means that cell with coordinate x-1 and y should ignite
     #     if col=6, cell to be ignited is x+1 and y-1
     
