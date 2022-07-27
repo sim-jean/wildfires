@@ -1,3 +1,7 @@
+######## Replication of definitions and hypothesis in Al Abri, Goran, 2019 ####
+
+# A. Define functions as in Table 1 ####
+
 damage = function(x){
   return(exp(-1*(0.1/x)))
 }
@@ -12,74 +16,46 @@ phi = function(x){
   return(1-exp(-0.93*x^0.93))
 }
 
-x = seq(0,1000, by=0.1)
+# B. Define x and y ####
 
+x = seq(0,750, by=0.5)
+y = seq(0,750, by=0.5)
 
-exp_dam_10 = damage(x)*poiss(growth(x), y=growth(10))*(1+phi(10))
+# C. Plot each function #####
 
-data = data.frame(x,exp_dam_10,c(rep("10",length(exp_dam_10))))
-data %>% ggplot(aes(x=x, y=exp_dam_10))+geom_line()
-data %>% ggplot(aes(x=x, y=growth.x.))+geom_line()
-names(data) = c("x","y","f_kt")
+illu1 = data.frame(x,damage(x),growth(x),poiss(x,y=growth(10)),phi(x))
 
-exp_dam_50 = damage(x)*poiss(growth(x), y=growth(50))*(1+phi(50))
-data2 = data.frame(x,exp_dam_50,c(rep("50",length(exp_dam_50))))
-names(data2) = c("x","y","f_kt")
+illu1 %>% ggplot(aes(x=x,y=damage.x.))+geom_line()
+illu1 %>% ggplot(aes(x=x, y=growth.x.))+geom_line()
+illu1 %>% ggplot(aes(x=x, y=poiss.x..y...growth.10..))+geom_line()
+illu1 %>% ggplot(aes(x=x, y=phi.x.))+geom_line()
 
+# D. Evaluation of the formulation from the paper ####
+try = matrix(nrow=length(x),ncol=length(y))
+for(i in 1:length(x)){
+  try[,i]  =  damage(x[i])*poiss(growth(x[i]),y=growth(y))*(1+phi(y))
+}
+try           = as.data.frame(try)
+colnames(try) = c(paste0("y",y))
+try           = cbind(try,x)
+try2          = pivot_longer(try,starts_with('y'),names_to="y",values_to="value")
 
-exp_dam_100 = damage(x)*poiss(growth(x), y=growth(100))*(1+phi(100))
-data3 = data.frame(x,exp_dam_100,c(rep("100",length(exp_dam_100))))
-names(data3) = c("x","y","f_kt")
+try2 %>% subset(y %in% c('y1','y50','y100','y300','y400', 'y500','y600','y700')) %>% ggplot(aes(x=x,y=value, color=y))+
+geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)
 
-exp_dam_2000 = damage(x)*poiss(growth(x), y=growth(2000))*(1+phi(2000))
-data4 = data.frame(x,exp_dam_2000,c(rep("2000",length(exp_dam_2000))))
-names(data4) = c("x","y","f_kt")
-data_full = rbind(data,data2,data3,data4)
+# E. Illustration with redefined function #####
 
-data_full %>% ggplot(aes(x=x,y=y, color=f_kt))+geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)
-plot(damage(x))
+rm(i)
+try = matrix(nrow=length(x),ncol=length(y))
 
-plot(poiss(growth(x),y=growth(2000))*(1+phi(2000)))
+for(i in 1:length(x)){
+  try[,i] = damage(x[i])*(1+ exp(-(0.2*(growth(x[i])+growth(y))/50))*(poiss(growth(x[i]),growth(y))*phi(y) -1))
+}
+try3          = as.data.frame(try)
+colnames(try3) = c(paste0("y",y))
+try3          = cbind(try3,x)
+try4          = pivot_longer(try3,starts_with('y'),names_to="y",values_to="value")
 
-plot(poiss(growth(x),y=growth(2000)))
-plot(1+phi(2000))
+try4 %>% subset(y %in% c('y1','y50','y100','y300','y400', 'y500','y600','y700')) %>% ggplot(aes(x=x,y=value, color=y))+
+  geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)
 
-plot(phi(x))
-
-
-# Part 2 with modified function
-
-
-exp_dam_10= damage(x)*poiss(growth(x), y=growth(10))*(exp(-(0.02*(x+10)/50))+phi(10))
-
-data = data.frame(x,exp_dam_10,c(rep("10",length(exp_dam_10))))
-data %>% ggplot(aes(x=x, y=exp_dam_10))+geom_line()
-data %>% ggplot(aes(x=x, y=growth.x.))+geom_line()
-names(data) = c("x","y","f_kt")
-
-exp_dam_50 = damage(x)*poiss(growth(x), y=growth(50))*(exp(-(0.02*(x+50)/50)) +phi(50))
-data2 = data.frame(x,exp_dam_50,c(rep("50",length(exp_dam_50))))
-names(data2) = c("x","y","f_kt")
-
-
-exp_dam_100 = damage(x)*poiss(growth(x), y=growth(100))*(exp(-(0.02*(x+100)/50))+phi(100))
-data3 = data.frame(x,exp_dam_100,c(rep("100",length(exp_dam_100))))
-names(data3) = c("x","y","f_kt")
-
-exp_dam_2000 = damage(x)*poiss(growth(x), y=growth(2000))*(exp(-(0.02*(x+2000)/50))+phi(2000))
-data4 = data.frame(x,exp_dam_2000,c(rep("2000",length(exp_dam_2000))))
-names(data4) = c("x","y","f_kt")
-data_full = rbind(data,data2,data3,data4)
-
-data_full %>% ggplot(aes(x=x,y=y, color=f_kt))+geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)
-
-# Correlation between two distributions
-x = seq(0,1000, by=0.1)
-
-data5 = data.frame(x, poiss(x,y=10), phi(x))
-
-data5 %>% ggplot(aes(x=x, y=poiss.x..y...10.))+geom_line()
-data5 %>% ggplot(aes(x=x, y=phi.x.))+geom_line()
-y = seq(0,1000, by=0.1)
-cor(poiss(x,y),phi(x), method = "spearman")
-cor.test(poiss(x,y),phi(x))
