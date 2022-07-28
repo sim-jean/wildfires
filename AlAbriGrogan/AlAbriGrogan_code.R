@@ -41,7 +41,7 @@ try           = cbind(try,x)
 try2          = pivot_longer(try,starts_with('y'),names_to="y",values_to="value")
 
 try2 %>% subset(y %in% c('y1','y50','y100','y300','y400', 'y500','y600','y700')) %>% ggplot(aes(x=x,y=value, color=y))+
-  geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)
+  geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)+scale_color_discrete(breaks=c('y1','y50','y100','y300','y400', 'y500','y600','y700'))
 
 # E. Illustration with redefined function #####
 
@@ -57,5 +57,22 @@ try3          = cbind(try3,x)
 try4          = pivot_longer(try3,starts_with('y'),names_to="y",values_to="value")
 
 try4 %>% subset(y %in% c('y1','y50','y100','y300','y400', 'y500','y600','y700')) %>% ggplot(aes(x=x,y=value, color=y))+
-  geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)
+  geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)+scale_color_discrete(breaks=c('y1','y50','y100','y300','y400', 'y500','y600','y700'))
 
+# F. Evaluation of the impact of forest being bounded by fmax=100
+x = seq(0,800, by=0.5)
+y = seq(0,800, by=0.5)
+
+try = matrix(nrow=length(x),ncol=length(y))
+for(i in 1:length(x)){
+  try[,i]  =  damage(x[i])*poiss(growth(x[i]),y=growth(y))*(1+phi(y))
+}
+try           = as.data.frame(try)
+colnames(try) = c(paste0("y",y))
+try           = cbind(try,x)
+try2          = pivot_longer(try,starts_with('y'),names_to="y",values_to="value")
+
+try2 %>% subset(y %in% c('y1','y50','y100','y300','y400', 'y500','y600','y700')) %>% ggplot(aes(x=x,y=value, color=y))+
+  geom_line(size=1.5)+geom_hline(yintercept = 1, size=1.5)+scale_color_discrete(breaks=c('y1','y50','y100','y300','y400', 'y500','y600','y700'))
+
+# Check the differential in probability caused by the wrong definition
