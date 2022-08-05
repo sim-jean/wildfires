@@ -52,7 +52,7 @@ try2 %>%
   geom_line(size=1.5)+
   geom_hline(yintercept = 1, size=1.5)+
   scale_color_manual(values=palette_col, 
-                     breaks=c('y0','y1','y50','y100','y300','y400', 'y500','y600','y700'))
+                     breaks=c('y0','y1','y50','y100','y300','y400', 'y500','y600','y700'))+ylab("Expected damage in %")
 # E. Illustration with redefined function #####
 
 rm(i)
@@ -171,3 +171,15 @@ min1_diff = try_keep_final %>% subset(x==fmax&y=="y1")
 min1_diff = (min1_diff[1,3]-min1_diff[2,3])/min1_diff[2,3]
 print(paste0("The minimum overestimation results in a ",100*round(min1_diff,2),"% overestimation of expected damage"))
 
+# Compute differences systematically, 
+try5 = data.frame(x=try2$x,y=try2$y) %>% mutate(diff_abs=try2$value-try4$value,
+                                            diff_rel=(try2$value-try4$value)/try4$value*100)
+try5[which(try5$diff_rel=="NaN"),4]=0
+
+try5 %>%   
+  subset(y %in% c('y0','y50','y100','y300','y400', 'y500','y600','y700')) %>% 
+  ggplot(aes(x=x, y=diff_rel, color=y))+
+  geom_point(size=1.5)+
+  scale_color_manual(values=palette_col, 
+                     breaks=c('y0','y1','y50','y100','y300','y400', 'y500','y600','y700'))+
+  ylab("Overestimation in % of corrected probability")
